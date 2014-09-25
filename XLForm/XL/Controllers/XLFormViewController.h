@@ -62,9 +62,11 @@
 
 @property XLFormDescriptor * form;
 @property (nonatomic, assign) BOOL readOnlyMode;
+@property (nonatomic, assign) BOOL swipeToDeleteMode;
 
 -(id)initWithForm:(XLFormDescriptor *)form;
 +(NSMutableDictionary *)cellClassesForRowDescriptorTypes;
 +(NSMutableDictionary *)inlineRowDescriptorTypesForRowDescriptorTypes;
+-(BOOL)canSwipeToDeleteRowAtIndexPath:(NSIndexPath*)indexPath;
 
 @end

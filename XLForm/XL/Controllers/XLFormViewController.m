@@ -97,7 +97,9 @@
     if (self.form.title){
         self.title = self.form.title;
     }
+    if (!self.swipeToDeleteMode) {
     [self.tableView setEditing:YES animated:NO];
+    }
     self.tableView.allowsSelectionDuringEditing = YES;
     self.form.delegate = self;
     self.clearsSelectionOnViewWillAppear = NO;
@@ -290,6 +292,23 @@
     [alertView show];
 }
 
+-(void)setSwipeToDeleteMode:(BOOL)swipeToDeleteMode
+{
+    _swipeToDeleteMode = swipeToDeleteMode;
+    if (_swipeToDeleteMode) {
+        self.tableView.editing = NO;
+    }
+    else {
+        self.tableView.editing = YES;
+    }
+}
+
+-(BOOL)canSwipeToDeleteRowAtIndexPath:(NSIndexPath*)indexPath
+{
+    //Sub-classes can override this method to select which rows can be deleted 
+    return NO;
+}
+
 #pragma mark - Private
 
 - (void)contentSizeCategoryChanged:(NSNotification *)notification
@@ -363,17 +382,22 @@
 
 -(BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (!self.swipeToDeleteMode) {
     return [self.form formSectionAtIndex:indexPath.section].isMultivaluedSection;
+}
+    else {
+        return [self canSwipeToDeleteRowAtIndexPath:indexPath];
+    }
 }
 
 -(void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (!self.swipeToDeleteMode) {
     if (editingStyle == UITableViewCellEditingStyleDelete){
         XLFormSectionDescriptor * multivaluedFormSection = [self.form formSectionAtIndex:indexPath.section];
         [multivaluedFormSection removeFormRowAtIndex:indexPath.row];
         self.tableView.editing = NO;
         self.tableView.editing = YES;
-
     }
     else if (editingStyle == UITableViewCellEditingStyleInsert){
         XLFormSectionDescriptor * multivaluedFormSection = [self.form formSectionAtIndex:indexPath.section];
@@ -385,6 +409,11 @@
         if ([[formRowDescriptor cellForFormController:self] respondsToSelector:@selector(formDescriptorCellBecomeFirstResponder)]){
             [[formRowDescriptor cellForFormController:self] formDescriptorCellBecomeFirstResponder];
         }
+    }
+}
+    else {
+        XLFormSectionDescriptor* formSection = [self.form formSectionAtIndex:indexPath.section];
+        [formSection removeFormRowAtIndex:indexPath.row];
     }
 }
 
@@ -427,9 +456,10 @@
 
 -(UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if ([self.form formSectionAtIndex:indexPath.section].formRows.count == (indexPath.row + 1)){
+    if (!self.swipeToDeleteMode && [self.form formSectionAtIndex:indexPath.section].formRows.count == (indexPath.row + 1)) {
         return UITableViewCellEditingStyleInsert;
     }
+    
     return UITableViewCellEditingStyleDelete;
 }
 
